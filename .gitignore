@@ -1,0 +1,13 @@
+# vscode settings
+.vscode
+
+# poetry
+.venv
+poetry.lock
+
+# cpp
+main
+main.o
+
+# audio files
+*.wav

@@ -5,10 +5,12 @@
 #include <fftw3.h>
 
 // Function to read audio data from a file
-void read_audio(const char* input_path, std::vector<double>& audio_data, int& sample_rate) {
+void read_audio(const char* input_path, std::vector<double>& audio_data, int& sample_rate)
+{
     SF_INFO sfinfo;
     SNDFILE* infile = sf_open(input_path, SFM_READ, &sfinfo);
-    if (!infile) {
+    if (!infile)
+    {
         std::cerr << "Failed to open input file." << std::endl;
         exit(1);
     }
@@ -18,7 +20,8 @@ void read_audio(const char* input_path, std::vector<double>& audio_data, int& sa
     sf_read_double(infile, audio_data.data(), sfinfo.frames * sfinfo.channels);
     sf_close(infile);
 
-    if (sfinfo.channels > 1) {
+    if (sfinfo.channels > 1)
+    {
         // Convert stereo to mono by averaging channels
         std::vector<double> mono_audio(sfinfo.frames);
         for (size_t i = 0; i < sfinfo.frames; ++i) {
@@ -33,7 +36,8 @@ void read_audio(const char* input_path, std::vector<double>& audio_data, int& sa
 }
 
 // Function to write audio data to a file
-void write_audio(const char* output_path, const std::vector<double>& audio_data, int sample_rate) {
+void write_audio(const char* output_path, const std::vector<double>& audio_data, int sample_rate)
+{
     SF_INFO sfinfo;
     sfinfo.frames = audio_data.size();
     sfinfo.samplerate = sample_rate;
@@ -41,7 +45,8 @@ void write_audio(const char* output_path, const std::vector<double>& audio_data,
     sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
     SNDFILE* outfile = sf_open(output_path, SFM_WRITE, &sfinfo);
-    if (!outfile) {
+    if (!outfile)
+    {
         std::cerr << "Failed to open output file." << std::endl;
         exit(1);
     }
@@ -51,8 +56,9 @@ void write_audio(const char* output_path, const std::vector<double>& audio_data,
 }
 
 // Function to process the audio using phase vocoder
-void phase_vocoder(const std::vector<double>& input, std::vector<double>& output, double time_scaling_factor, double pitch_shift_factor, int sample_rate) {
-    int fft_size = 1024;
+void phase_vocoder(const std::vector<double>& input, std::vector<double>& output, double time_scaling_factor, double pitch_shift_factor, int sample_rate)
+{
+    int fft_size = 4096;
     int hop_size = fft_size / 4;
     int num_frames = input.size() / hop_size;
 
@@ -63,7 +69,8 @@ void phase_vocoder(const std::vector<double>& input, std::vector<double>& output
     std::vector<double> sum_phase(fft_size);
     std::vector<double> window(fft_size);
 
-    for (int i = 0; i < fft_size; ++i) {
+    for (int i = 0; i < fft_size; ++i)
+    {
         window[i] = 0.5 * (1 - cos(2 * M_PI * i / (fft_size - 1))); // Hann window
     }
 
@@ -72,11 +79,16 @@ void phase_vocoder(const std::vector<double>& input, std::vector<double>& output
     fftw_plan forward_plan = fftw_plan_dft_1d(fft_size, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_plan inverse_plan = fftw_plan_dft_1d(fft_size, out, in, FFTW_BACKWARD, FFTW_ESTIMATE);
 
-    for (int frame = 0; frame < num_frames - 1; ++frame) {
-        for (int k = 0; k < fft_size; ++k) {
-            if (frame * hop_size + k < input.size()) {
+    for (int frame = 0; frame < num_frames - 1; ++frame)
+    {
+        for (int k = 0; k < fft_size; ++k)
+        {
+            if (frame * hop_size + k < input.size())
+            {
                 in[k][0] = input[frame * hop_size + k] * window[k];
-            } else {
+            }
+            else
+            {
                 in[k][0] = 0.0;
             }
             in[k][1] = 0.0;
@@ -84,7 +96,8 @@ void phase_vocoder(const std::vector<double>& input, std::vector<double>& output
 
         fftw_execute(forward_plan);
 
-        for (int k = 0; k < fft_size; ++k) {
+        for (int k = 0; k < fft_size; ++k)
+        {
             double magnitude = sqrt(out[k][0] * out[k][0] + out[k][1] * out[k][1]);
             double phase = atan2(out[k][1], out[k][0]);
 
@@ -104,8 +117,10 @@ void phase_vocoder(const std::vector<double>& input, std::vector<double>& output
 
         fftw_execute(inverse_plan);
 
-        for (int k = 0; k < fft_size; ++k) {
-            if (frame * hop_size * time_scaling_factor + k < output.size()) {
+        for (int k = 0; k < fft_size; ++k)
+        {
+            if (frame * hop_size * time_scaling_factor + k < output.size())
+            {
                 output[frame * hop_size * time_scaling_factor + k] += in[k][0] * window[k] / fft_size;
             }
         }
@@ -117,16 +132,18 @@ void phase_vocoder(const std::vector<double>& input, std::vector<double>& output
     fftw_free(out);
 }
 
-int main(int argc, char* argv[]) {
-    if (argc != 5) {
+int main(int argc, char* argv[])
+{
+    if (argc != 5)
+    {
         std::cerr << "Usage: " << argv[0] << " <input_path> <output_path> <time_scaling_factor> <pitch_shift_factor>" << std::endl;
         return 1;
     }
 
     const char* input_path = argv[1];
     const char* output_path = argv[2];
-    double time_scaling_factor = atof(argv[3]);
-    double pitch_shift_factor = atof(argv[4]);
+    double time_scaling_factor = 1 / atof(argv[3]);
+    double pitch_shift_factor = 1 / atof(argv[4]);
 
     std::vector<double> audio_data;
     int sample_rate;

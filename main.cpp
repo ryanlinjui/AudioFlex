@@ -1,12 +1,16 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <cstdint>
+
 #include <sndfile.h>
 #include <fftw3.h>
 
-// Function to read audio data from a file
-void read_audio(const char* input_path, std::vector<double>& audio_data, int& sample_rate)
-{
+void read_audio(
+    const char* input_path,
+    std::vector<double>& audio_data,
+    int32_t& sample_rate
+){
     SF_INFO sfinfo;
     SNDFILE* infile = sf_open(input_path, SFM_READ, &sfinfo);
     if (!infile)
@@ -24,9 +28,11 @@ void read_audio(const char* input_path, std::vector<double>& audio_data, int& sa
     {
         // Convert stereo to mono by averaging channels
         std::vector<double> mono_audio(sfinfo.frames);
-        for (size_t i = 0; i < sfinfo.frames; ++i) {
+        for (size_t i = 0; i < sfinfo.frames; ++i)
+        {
             double sum = 0;
-            for (int j = 0; j < sfinfo.channels; ++j) {
+            for (int j = 0; j < sfinfo.channels; ++j)
+            {
                 sum += audio_data[i * sfinfo.channels + j];
             }
             mono_audio[i] = sum / sfinfo.channels;
@@ -35,9 +41,11 @@ void read_audio(const char* input_path, std::vector<double>& audio_data, int& sa
     }
 }
 
-// Function to write audio data to a file
-void write_audio(const char* output_path, const std::vector<double>& audio_data, int sample_rate)
-{
+void write_audio(
+    const char* output_path,
+    const std::vector<double>& audio_data,
+    int32_t sample_rate
+){
     SF_INFO sfinfo;
     sfinfo.frames = audio_data.size();
     sfinfo.samplerate = sample_rate;
@@ -55,14 +63,18 @@ void write_audio(const char* output_path, const std::vector<double>& audio_data,
     sf_close(outfile);
 }
 
-// Function to process the audio using phase vocoder
-void phase_vocoder(const std::vector<double>& input, std::vector<double>& output, double time_scaling_factor, double pitch_shift_factor, int sample_rate)
-{
-    int fft_size = 4096;
-    int hop_size = fft_size / 4;
-    int num_frames = input.size() / hop_size;
+void phase_vocoder(
+    const std::vector<double>& input,
+    std::vector<double>& output,
+    double time_scaling_factor,
+    double pitch_shift_factor,
+    int32_t sample_rate
+){
+    int32_t fft_size = 4096;
+    int32_t hop_size = fft_size / 4;
+    int32_t num_frames = input.size() / hop_size;
 
-    int output_size = input.size() * time_scaling_factor;
+    int32_t output_size = input.size() * time_scaling_factor;
     output.resize(output_size);
 
     std::vector<double> prev_phase(fft_size);
@@ -91,6 +103,7 @@ void phase_vocoder(const std::vector<double>& input, std::vector<double>& output
             {
                 in[k][0] = 0.0;
             }
+            
             in[k][1] = 0.0;
         }
 
@@ -146,7 +159,7 @@ int main(int argc, char* argv[])
     double pitch_shift_factor = 1 / atof(argv[4]);
 
     std::vector<double> audio_data;
-    int sample_rate;
+    int32_t sample_rate;
 
     read_audio(input_path, audio_data, sample_rate);
     std::vector<double> output_data;

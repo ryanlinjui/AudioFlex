@@ -1,4 +1,4 @@
-# Compiler settings - Can change based on your needs
+# Compiler and flags
 CXX = g++
 CXXFLAGS = -Wall -O2 -std=c++11
 
@@ -7,25 +7,22 @@ LDFLAGS = -lsndfile -lfftw3
 
 # Source files
 SOURCES = main.cpp
+
 # Object files
 OBJECTS = $(SOURCES:.cpp=.o)
+
 # Executable name
 EXECUTABLE = main
 
-# Default target
 all: $(EXECUTABLE)
 
-# Linking the executable from the object files
 $(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS)
 
-# Compiling the source files into object files
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean up
 clean:
 	rm -f $(OBJECTS) $(EXECUTABLE)
 
-# Phony targets
 .PHONY: clean
